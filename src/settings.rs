@@ -5,8 +5,7 @@ pub struct Settings {
 
 }
 
-impl Settings
-{
+impl Settings {
     pub fn dump(&self) {
         println!("= Settings");
         println!("=== Execution {}", if self.parallel {"parallel"} else {"sequential"});
@@ -20,7 +19,7 @@ impl Default for Settings {
         Self {
             image_width: 256,
             image_height: 256,
-            parallel: true,
+            parallel: false,
         }
     }
 }
