@@ -1,23 +1,23 @@
 mod settings;
+mod vec3;
+mod color;
+use color::{Color, WriteColor};
 
 use std::path::Path;
-use image::{ImageBuffer, RgbImage, Rgb};
+use std::fs;
+use image::{ImageBuffer, RgbImage};
 
 use std::time::Instant;
 use rayon::prelude::*;
 use indicatif::{ProgressBar, ProgressStyle, ProgressState};
-use std::{cmp::min, fmt::Write};
+use std::fmt::Write;
+use chrono::prelude::*;
 
-fn to_byte(f: f64) -> u8
-{
-    return (255.0 * f) as u8;
-}
-fn main() {
+fn main() -> std::io::Result<()> {
     let chrono_total = Instant::now();
 
     let settings: settings::Settings = Default::default();
 
-    let output_filename="output/render_last.png";
     let mut img: RgbImage = ImageBuffer::new(settings.image_width, settings.image_height);
     settings.dump();
 
@@ -28,13 +28,14 @@ fn main() {
         .unwrap()
         .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()));
 
+    println!("Rendering...");
     let chrono_render_loop = Instant::now();
     if !settings.parallel {
         for (x, y, pixel) in img.enumerate_pixels_mut() {
             let r = (x as f64) / ((settings.image_width-1) as f64);
             let g = (y as f64) / ((settings.image_height-1) as f64);
             let b: f64 = 0.0;
-            *pixel = Rgb([to_byte(r), to_byte(g), to_byte(b)]);
+            pixel.write_color(Color::new(r, g, b));
             progress_bar.inc(1);
         }
     }
@@ -47,18 +48,24 @@ fn main() {
             let g = (y as f64) / ((settings.image_height-1) as f64);
             let b: f64 = 0.0;
 
-            pixel[0] = to_byte(r);
-            pixel[1] = to_byte(g);
-            pixel[2] = to_byte(b);
+            pixel.write_color(Color::new(r, g, b));
             progress_bar.inc(1);
         });
     }
     progress_bar.finish();
     println!("== Elapsed render {:?}", chrono_render_loop.elapsed());
 
+    println!("Saving...");
     let chrono_save = Instant::now();
-    img.save(Path::new(output_filename)).unwrap();
+    let output_filename_last="output/render_last.png";
+    img.save(Path::new(output_filename_last)).unwrap();
     println!("== Elapsed save {:?}", chrono_save.elapsed());
 
+    let local: DateTime<Local> = Local::now();
+    let output_filename=format!("output/render_{}.png", local.format("%Y-%m-%d_%H_%M_%S").to_string());
+    fs::copy(output_filename_last, output_filename)?;
+
     println!("= Elapsed total {:?}", chrono_total.elapsed());
+    
+    Ok(())
 }

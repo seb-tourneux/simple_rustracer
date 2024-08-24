@@ -19,7 +19,7 @@ impl Default for Settings {
         Self {
             image_width: 256,
             image_height: 256,
-            parallel: false,
+            parallel: true,
         }
     }
 }
