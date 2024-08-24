@@ -1,8 +1,11 @@
+use crate::camera::Camera;
+
 pub struct Settings {
     pub image_width: u32,
     pub image_height: u32,
     pub parallel: bool,
 
+    pub camera: Camera,
 }
 
 impl Settings {
@@ -16,10 +19,14 @@ impl Settings {
 
 impl Default for Settings {
     fn default() -> Self {
+        let camera = Camera::new();
+        let image_width = 400;
+        let image_height = ((image_width as f64) / camera.aspect_ratio) as u32;
         Self {
-            image_width: 256,
-            image_height: 256,
+            image_width: image_width,
+            image_height: image_height,
             parallel: true,
+            camera: camera,
         }
     }
 }

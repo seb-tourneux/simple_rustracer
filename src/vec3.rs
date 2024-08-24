@@ -9,7 +9,7 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    pub fn new(x: Scalar, y: Scalar, z:Scalar) -> Vec3 {
+    pub const fn new(x: Scalar, y: Scalar, z:Scalar) -> Vec3 {
         Vec3 { e: [x, y, z] }
     }
     
