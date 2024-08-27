@@ -12,7 +12,10 @@ impl Vec3 {
     pub const fn new(x: Scalar, y: Scalar, z:Scalar) -> Vec3 {
         Vec3 { e: [x, y, z] }
     }
-    
+    pub const fn uni(x: Scalar) -> Vec3 {
+        Vec3::new(x, x, x)
+    }
+
     pub fn x(&self) -> Scalar {
         self.e[0]
     }
@@ -127,4 +130,8 @@ pub fn cross(u: Vec3, v: Vec3) -> Vec3 {
 
 pub fn unit_vector(v: Vec3) -> Vec3 {
     v / v.length()
+}
+
+pub fn fit01(v: Vec3) -> Vec3 {
+    0.5 * (v + Vec3::uni(1.0))
 }

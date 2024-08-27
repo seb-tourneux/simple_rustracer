@@ -3,9 +3,12 @@ mod vec3;
 mod color;
 mod ray;
 mod camera;
-
+mod hittable;
+mod hittable_list;
+mod common;
 
 mod render;
+pub mod sphere;
 use crate::render::render;
 
 use std::path::Path;

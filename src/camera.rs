@@ -1,4 +1,5 @@
 use crate::vec3::*;
+use crate::ray::Ray;
 
 
 pub struct Camera
@@ -40,5 +41,10 @@ impl Camera {
             vertical: vertical,
             lower_left_corner: lower_left_corner,
         }
+    }
+
+    pub fn get_ray(&self, u: Scalar, v: Scalar) -> Ray {
+        let dir = self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin;
+        Ray::new(self.origin, dir)
     }
 }
