@@ -5,5 +5,6 @@ Peter Shirley's [Ray Tracing in One Weekend](https://raytracing.github.io/books/
 
 Each render from the beginning :
 
-[![Watch the video](https://raw.githubusercontent.com/seb-tourneux/simple_rustracer/master/process.gif)]
-[Uncompressed version](https://raw.githubusercontent.com/seb-tourneux/simple_rustracer/master/process.mp4)
+![Watch the video](https://raw.githubusercontent.com/seb-tourneux/simple_rustracer/master/process.gif)
+
+<a href="https://raw.githubusercontent.com/seb-tourneux/simple_rustracer/master/process.mp4" target="_blank">Uncompressed version</a>
