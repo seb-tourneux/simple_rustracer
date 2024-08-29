@@ -51,6 +51,12 @@ impl Vec3 {
     pub fn length_squared(&self) -> Scalar {
         self.x() * self.x() + self.y() * self.y() + self.z() * self.z()
     }
+
+    pub fn near_zero(&self) -> bool {
+        const EPS: f64 = 1.0e-8;
+        // Return true if the vector is close to zero in all dimensions
+        self.e[0].abs() < EPS && self.e[1].abs() < EPS && self.e[2].abs() < EPS
+    }
 }
 
 pub type Point3 = Vec3;

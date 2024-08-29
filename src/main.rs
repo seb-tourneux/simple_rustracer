@@ -6,6 +6,7 @@ mod camera;
 mod hittable;
 mod hittable_list;
 mod common;
+mod material;
 
 mod render;
 pub mod sphere;

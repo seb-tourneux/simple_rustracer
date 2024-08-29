@@ -1,5 +1,6 @@
+use std::rc::Rc;
 
-
+use crate::material::Lambertian;
 use crate::{color, ray::*, vec3};
 use crate::camera::Camera;
 
@@ -39,10 +40,15 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, depth: u32) -> Color {
     let epsilon = 0.0001;
 
     if world.hit(ray, epsilon, common::INFINITY, &mut rec) {
-        let direction = rec.normal + vec3::random_unit_vector();
-        let attenuation = 0.5;
-        return attenuation * ray_color(&Ray::new(rec.p, direction), world, depth - 1);
-        
+        let mut attenuation = Color::default();
+        let mut scattered = Ray::default();
+
+        if rec.mat.as_ref().unwrap().
+            scatter(ray, &rec, &mut attenuation, &mut scattered)
+        {
+            return attenuation * ray_color(&scattered, world, depth - 1);
+        }   
+        return color::black();   
         //return vec3::fit01(rec.normal); // todo : pattern matching to switch pass ?
     }
     sky_color(ray)
@@ -63,11 +69,13 @@ pub fn render(settings: &Settings, img: &mut RgbImage)
         .unwrap()
         .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()));
 
+    let lambert_blue = Rc::new(Lambertian::new(Color::new(0.1, 0.2, 0.8)));
+    let lambert_red = Rc::new(Lambertian::new(Color::new(0.7, 0.2, 0.1)));
     let mut world = HittableList::new();
-    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5)));
-    world.add(Box::new(Sphere::new(Point3::new(-1.0, 1.5, -3.0), 0.6)));
-    world.add(Box::new(Sphere::new(Point3::new(4.5, 1.7, -4.0), 1.0)));
-    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0)));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, lambert_blue.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-1.0, 1.5, -3.0), 0.6, lambert_blue.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(4.5, 1.7, -4.0), 1.0, lambert_blue.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, lambert_red)));
 
     //if !settings.parallel {
         for (x, y, pixel) in img.enumerate_pixels_mut() {
