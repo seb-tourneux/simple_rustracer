@@ -4,7 +4,9 @@ pub struct Settings {
     pub image_width: u32,
     pub image_height: u32,
     pub parallel: bool,
+
     pub sample_per_pixel: u32,
+    pub max_depth: u32,
 
     pub camera: Camera,
 }
@@ -29,6 +31,7 @@ impl Default for Settings {
             parallel: false,
             camera: camera,
             sample_per_pixel: 32,
+            max_depth: 10,
         }
     }
 }

@@ -9,7 +9,7 @@ use crate::hittable_list::*;
 use crate::common::{self, random_double};
 
 use crate::color::{Color, WriteColor};
-use crate::vec3::Point3;
+use crate::vec3::{Point3, Vec3};
 use crate::vec3::Scalar;
 use crate::sphere::Sphere;
 
@@ -29,18 +29,28 @@ fn sky_color(ray: &Ray) -> Color {
     (1.0 - t) * COLOR1 + t * COLOR2
 }
 
-fn ray_color(ray: &Ray, world: &dyn Hittable) -> Color {
-    let mut rec = HitRecord::new();
+fn ray_color(ray: &Ray, world: &dyn Hittable, depth: u32) -> Color {
 
-    if world.hit(ray, 0.0, common::INFINITY, &mut rec) {
-        return vec3::fit01(rec.normal);
+    if depth <= 0 {
+        return color::black();
+    }
+
+    let mut rec = HitRecord::new();
+    let epsilon = 0.0001;
+
+    if world.hit(ray, epsilon, common::INFINITY, &mut rec) {
+        let direction = rec.normal + vec3::random_unit_vector();
+        let attenuation = 0.5;
+        return attenuation * ray_color(&Ray::new(rec.p, direction), world, depth - 1);
+        
+        //return vec3::fit01(rec.normal); // todo : pattern matching to switch pass ?
     }
     sky_color(ray)
 }
 
 fn compute_color(settings: &Settings, u: Scalar, v: Scalar, world: &dyn Hittable) -> Color {
     let r = settings.camera.get_ray(u, v);
-    ray_color(&r, world)
+    ray_color(&r, world, settings.max_depth)
 
 }
 

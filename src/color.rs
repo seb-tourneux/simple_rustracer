@@ -30,7 +30,14 @@ impl WriteColor for &mut [u8] {
     }
 }
 
+pub fn gamma(pixel_color: Color) -> Color {
+    Color::new( Scalar::sqrt(pixel_color.x()), 
+            Scalar::sqrt(pixel_color.y()), 
+            Scalar::sqrt(pixel_color.z()) )
+}
+
 pub fn to_rgb(pixel_color: Color) -> Rgb<PixelType> {
+    let pixel_color = gamma(pixel_color);
     Rgb([to_byte(pixel_color.x()), to_byte(pixel_color.y()), to_byte(pixel_color.z())])
 }
 
