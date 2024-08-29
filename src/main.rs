@@ -18,7 +18,9 @@ use image::{ImageBuffer, RgbImage};
 use std::time::Instant;
 use chrono::prelude::*;
 
+
 fn main() -> std::io::Result<()> {
+
     let chrono_total = Instant::now();
 
     let settings: settings::Settings = Default::default();
