@@ -1,13 +1,11 @@
-use std::rc::Rc;
-
-use crate::material::Lambertian;
+use crate::material::*;
 use crate::{color, ray::*, vec3};
 use crate::camera::Camera;
 
 use crate::settings::*;
 use crate::hittable::*;
 use crate::hittable_list::*;
-use crate::common::{self, random_double};
+use crate::common::{self, random_double, SP};
 
 use crate::color::{Color, WriteColor};
 use crate::vec3::{Point3, Vec3};
@@ -60,6 +58,53 @@ fn compute_color(settings: &Settings, u: Scalar, v: Scalar, world: &dyn Hittable
 
 }
 
+fn render_sequential(   settings: &Settings, 
+                        world: &HittableList, 
+                        progress_bar: &ProgressBar,
+                        img: &mut RgbImage)
+{
+    for (x, y, pixel) in img.enumerate_pixels_mut() {
+        let mut pixel_color = color::black();
+        for _ in 0..settings.sample_per_pixel {
+            let u = ((x as Scalar) + random_double()) / ((settings.image_width-1) as f64);
+            let v = (((settings.image_height-y) as Scalar) + random_double()) / ((settings.image_height-1) as f64);
+
+            pixel_color += compute_color(&settings, u, v, world);
+        }
+
+        pixel.write_color(pixel_color / (settings.sample_per_pixel as Scalar));
+        progress_bar.inc(1);
+    }
+}
+
+fn render_parallel( settings: &Settings, 
+                    world: &HittableList, 
+                    progress_bar: &ProgressBar,
+                    img: &mut RgbImage)
+{
+    for j in (0..settings.image_height).rev() {
+        let pixel_colors: Vec<_> = (0..settings.image_width)
+        .into_par_iter()
+        .map(|i| {
+            let mut pixel_color = color::black();
+            for _ in 0..settings.sample_per_pixel {
+                let u = ((i as Scalar) + random_double()) / ((settings.image_width-1) as f64);
+                let v = (((settings.image_height-j) as Scalar) + random_double()) / ((settings.image_height-1) as f64);
+    
+                pixel_color += compute_color(&settings, u, v, world);
+            }
+            pixel_color / (settings.sample_per_pixel as Scalar)
+        })
+        .collect();
+
+        for (i, pixel_color) in pixel_colors.iter().enumerate() {
+            img.put_pixel(i.try_into().unwrap(), j, color::to_rgb(*pixel_color));
+        }
+        progress_bar.inc(settings.image_width.into());
+
+    }
+}
+
 pub fn render(settings: &Settings, img: &mut RgbImage)
 {
     let total_nb_pixels = settings.image_width * settings.image_height; 
@@ -69,29 +114,29 @@ pub fn render(settings: &Settings, img: &mut RgbImage)
         .unwrap()
         .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()));
 
-    let lambert_blue = Rc::new(Lambertian::new(Color::new(0.1, 0.2, 0.8)));
-    let lambert_red = Rc::new(Lambertian::new(Color::new(0.7, 0.2, 0.1)));
+    let lambert_blue = SP::new(Lambertian::new(Color::new(0.1, 0.2, 0.8)));
+    let lambert_red = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2)));
+    let metal_red = SP::new(Metal::new(Color::new(0.8, 0.5, 0.3), 0.9));
+    let metal_green = SP::new(Metal::new(Color::new(0.6, 0.8, 0.4), 0.5));
+    let metal_white_fuzz = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.));
+    let metal_white_reflect = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.01));
+    let glass = SP::new(Dielectric::new(1.5));
     let mut world = HittableList::new();
     world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, lambert_blue.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(-1.0, 1.5, -3.0), 0.6, lambert_blue.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(4.5, 1.7, -4.0), 1.0, lambert_blue.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-1.0, 1.5, -3.0), 0.6, lambert_blue)));
+    world.add(Box::new(Sphere::new(Point3::new(4.5, 1.7, -4.0), 1.0, metal_red.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-1.2, 0.05, -1.0), 0.5, glass.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.35, -0.4, -0.7), 0.1, metal_white_reflect)));
+    world.add(Box::new(Sphere::new(Point3::new(0.5, 0.8, -1.3), 0.35, metal_green)));
+    world.add(Box::new(Sphere::new(Point3::new(-0.85, 0.5, -1.2), -0.25, glass)));
     world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, lambert_red)));
 
-    //if !settings.parallel {
-        for (x, y, pixel) in img.enumerate_pixels_mut() {
-            let mut pixel_color = color::black();
-            for _ in 0..settings.sample_per_pixel {
-                let u = ((x as Scalar) + random_double()) / ((settings.image_width-1) as f64);
-                let v = (((settings.image_height-y) as Scalar) + random_double()) / ((settings.image_height-1) as f64);
-    
-                pixel_color += compute_color(&settings, u, v, &world);
-            }
-
-            pixel.write_color(pixel_color / (settings.sample_per_pixel as Scalar));
-            progress_bar.inc(1);
-        }
-    //}
-    // else {
+    if !settings.parallel {
+        render_sequential(settings, &world, &progress_bar, img);
+    }
+    else {
+        render_parallel(settings, &world, &progress_bar, img);
+    }
 
     //     for j in (0..settings.image_height).rev() {
     //         let pixel_colors: Vec<_> = (0..settings.image_width)

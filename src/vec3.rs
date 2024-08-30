@@ -172,3 +172,14 @@ pub fn random_in_unit_sphere() -> Vec3 {
 pub fn random_unit_vector() -> Vec3 {
     unit_vector(random_in_unit_sphere())
 }
+
+pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+    v - 2.0 * dot(v, n) * n
+}
+
+pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: Scalar) -> Vec3 {
+    let cos_thata = Scalar::min(dot(-uv, n), 1.0);
+    let r_out_perp = etai_over_etat * (uv + cos_thata * n);
+    let r_out_parallel = -Scalar::sqrt( Scalar::abs(1.0 - r_out_perp.length_squared()))*n;
+    r_out_parallel + r_out_perp
+}

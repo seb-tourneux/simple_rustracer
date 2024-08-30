@@ -4,7 +4,13 @@ use crate::vec3::Scalar;
 pub use std::f64::consts::PI;
 pub use std::f64::INFINITY;
 
+//use std::rc::Rc;
+use std::sync::Arc;
+
 use rand::Rng;
+
+pub type SP<T> = Arc<T>;
+
 
 // Utility
 

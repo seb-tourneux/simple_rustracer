@@ -1,18 +1,17 @@
-use std::rc::Rc;
-
 use crate::hittable::{HitRecord, Hittable};
 use crate::material::Material;
+use crate::common::SP;
 use crate::ray::Ray;
 use crate::vec3::{self, Point3, Scalar};
 
 pub struct Sphere {
     center: Point3,
     radius: Scalar,
-    mat: Rc<dyn Material>,
+    mat: SP<dyn Material>,
 }
 
 impl Sphere {
-    pub fn new(center: Point3, radius: Scalar, mat: Rc<dyn Material>) -> Sphere {
+    pub fn new(center: Point3, radius: Scalar, mat: SP<dyn Material>) -> Sphere {
         Sphere{
             center,
             radius,

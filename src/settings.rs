@@ -23,14 +23,14 @@ impl Settings {
 impl Default for Settings {
     fn default() -> Self {
         let camera = Camera::new();
-        let image_width = 400;
+        let image_width = 800;
         let image_height = ((image_width as f64) / camera.aspect_ratio) as u32;
         Self {
             image_width: image_width,
             image_height: image_height,
-            parallel: false,
+            parallel: true,
             camera: camera,
-            sample_per_pixel: 32,
+            sample_per_pixel: 128,
             max_depth: 10,
         }
     }
