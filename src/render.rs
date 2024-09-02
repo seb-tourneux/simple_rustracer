@@ -1,4 +1,4 @@
-use crate::material::*;
+use crate::{material::*, to_spherical};
 use crate::{color, ray::*, vec3};
 use crate::camera::Camera;
 
@@ -17,7 +17,30 @@ use image::RgbImage;
 use indicatif::{ProgressBar, ProgressStyle, ProgressState};
 use std::fmt::Write;
 
+use exr::prelude::Vec2;
 
+fn get_image_pixel(settings: &Settings, spherical: Vec3) -> Color {
+    let image = settings.env_map.as_ref().unwrap();
+    let size = image.layer_data.size;
+    let pos_px = Vec2(  (spherical.y() * (size.0 as Scalar)) as usize,
+                       (spherical.z() * (size.1 as Scalar)) as usize);
+    let pixel = image.layer_data.channel_data.pixels.get_pixel(pos_px);
+    Color::new(pixel.0.to_f32().into(), pixel.1.to_f32().into(), pixel.2.to_f32().into())
+}
+
+
+fn sky_color_hdri(ray: &Ray, settings: &Settings) -> Color {
+    let mut unit_direction = vec3::unit_vector(ray.direction());
+    unit_direction.e[1] = unit_direction.y();
+    let mut sph = to_spherical(unit_direction);
+    
+    sph.e[1] %= 2.0 * common::PI;
+
+    sph.e[2] += 2.0*common::PI;
+    sph.e[2] %= 2.0 * common::PI;
+
+    get_image_pixel(settings, sph  / (2.0 * common::PI) )
+}
 
 fn sky_color(ray: &Ray, settings: &Settings) -> Color {
     let unit_direction = vec3::unit_vector(ray.direction());
@@ -25,7 +48,8 @@ fn sky_color(ray: &Ray, settings: &Settings) -> Color {
     const COLOR1: Color = color::white();
     const COLOR2: Color = Color::new(0.5, 0.7, 1.0);
     //t = t * t * t;
-    t = Scalar::powf(t, 0.5);
+    //t = Scalar::powf(t, 0.5);
+    t*=1.3;
     //t = sigmoid(t+0.5, 2.0);
     
     (1.0 - t) * COLOR1 + t * COLOR2
@@ -67,6 +91,7 @@ fn generate_world_generic() -> HittableList
 
     let lambert_blue = SP::new(Lambertian::new(Color::new(0.1, 0.2, 0.8), None));
     let lambert_red = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2), Some(0.005)));
+    let lambert_red_checker = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2), Some(0.005)));
     let lambert_dark = SP::new(Lambertian::new(Color::new(0.06, 0.05, 0.05), Some(0.1)));
     let metal_red = SP::new(Metal::new(Color::new(0.8, 0.5, 0.3), 0.9));
     let metal_green = SP::new(Metal::new(Color::new(0.6, 0.8, 0.65), 0.5));
@@ -85,8 +110,11 @@ fn generate_world_generic() -> HittableList
     world.add(Box::new(Sphere::new(Point3::new(-0.33, -0.47, -0.72), 0.03, metal_white_reflect.clone())));
     world.add(Box::new(Sphere::new(Point3::new(0.5, 0.8, -1.3), 0.35, metal_green)));
     world.add(Box::new(Sphere::new(Point3::new(-0.85, 0.5, -1.2), -0.25, glass)));
+    world.add(Box::new(Sphere::new(Point3::new(1.55, 1.2, -1.9), 0.4, metal_white_reflect.clone())));
     world.add(Box::new(Sphere::new(Point3::new(1.55, 1.2, -1.9), 0.4, metal_white_reflect)));
-    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, lambert_red.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.95, 0.4, -0.15), 0.15, metal_white_fuzz.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(1.15, 0.2, -0.12), 0.08, metal_white_fuzz.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, lambert_red_checker.clone())));
     //world.add(Box::new(Sphere::new(Point3::new(-15.0, 27.0, -5.0), 25.0, lambert_dark)));
 
 

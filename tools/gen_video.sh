@@ -16,7 +16,9 @@ FFMPEG_COMMAND="ffmpeg -y -framerate 8  -i \"$TMP_DIR/image_%04d.png\" -vf \"sca
 
 echo "FFMPEG_COMMAND $FFMPEG_COMMAND"
 
-eval $FFMPEG_COMMAND process.mp4
-eval $FFMPEG_COMMAND process.gif
+eval $FFMPEG_COMMAND process_2.mp4
 
 rm -rf "$TMP_DIR"
+
+FFMPEG_COMMAND_CONCAT="ffmpeg -y -f concat -safe 0 -i video_files.txt -c copy "
+eval $FFMPEG_COMMAND_CONCAT process.mp4

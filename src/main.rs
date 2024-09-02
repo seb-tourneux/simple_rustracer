@@ -51,37 +51,49 @@ fn launch_render(settings: &Settings) -> std::io::Result<()> {
 
     Ok(())
 }
+
+enum Anim {
+    NoAnim,
+    Tournette,
+    Fov,
+    Aperture,
+    DistFocus,
+}
+
 fn main() -> std::io::Result<()> {
 
-    let single = true;
-    if single {
-        let mut settings: settings::Settings = Default::default();
+    let anim = Anim::DistFocus;
+    let nb_frames = 16;
 
-        let fov = 50.0;
-        let dist = 5.0;
-        let look_at = Point3::new(0.0, 0.0, -1.0);
-        let t = 2.0 * PI *(1.0 / 8.0);
-        let look_from = look_at + 
-            Point3::new(dist * Scalar::cos(t), 
-                        0.8, 
-                        dist * Scalar::sin(t) );
-
-        settings.camera = Camera::new(
-            look_from,
-            look_at,
-            Vec3::new(0.0, 1.0, 0.0),
-            fov, );
-            
-        launch_render(&settings)?;   
-    }
-    else
-    {
-        let nb_frames = 16;
-        for i in 0..nb_frames {
+    match anim {
+        Anim::NoAnim => {
             let mut settings: settings::Settings = Default::default();
 
-            let anim_tournette = false;
-            if anim_tournette {
+            let fov = 50.0;
+            let dist = 2.0;
+            let look_at = Point3::new(0.0, 0.0, -1.0);
+            let t = 2.0 * PI *(1.0 / 6.0);
+            let look_from = look_at + 
+                Point3::new(dist * Scalar::cos(t), 
+                            0.8, 
+                            dist * Scalar::sin(t) );
+            let dist_to_focus = (look_from - look_at).length();
+            let aperture = 0.4;
+                    
+            settings.camera = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0.0, 1.0, 0.0),
+                fov, 
+                aperture,
+            dist_to_focus);
+                
+            launch_render(&settings)?;   
+        }
+        Anim::Tournette => {
+            for i in 0..nb_frames {
+                let mut settings: settings::Settings = Default::default();
+
                 let fov = 30.0;
                 let dist = 5.0;
                 let look_at = Point3::new(0.0, 0.0, -1.0);
@@ -90,16 +102,23 @@ fn main() -> std::io::Result<()> {
                     Point3::new(dist * Scalar::cos(t), 
                                 0.8, 
                                 dist * Scalar::sin(t) );
+                let dist_to_focus = (look_from - look_at).length();
+                let aperture = 2.0;
 
                 settings.camera = Camera::new(
                     look_from,
                     look_at,
                     Vec3::new(0.0, 1.0, 0.0),
-                    fov, );
+                    fov, 
+                    aperture,
+                    dist_to_focus);
                 launch_render(&settings)?;
             }
-            else {
-                // anim fov
+        }
+        Anim::Fov => {
+            for i in 0..nb_frames {
+                let mut settings: settings::Settings = Default::default();
+
                 let fov = linear_step((i as Scalar) / ((nb_frames-1) as Scalar), 10.0, 90.0);
                 let dist = 5.0;
                 let t = 2.0 * PI * (1.0 / 8.0);
@@ -110,19 +129,78 @@ fn main() -> std::io::Result<()> {
                     Point3::new(dist * Scalar::cos(t), 
                                 0.8, 
                                 dist * Scalar::sin(t) );
-
+                let dist_to_focus = (look_from - look_at).length();
+                let aperture = 2.0;
                 settings.camera = Camera::new(
                     look_from,
                     look_at,
                     Vec3::new(0.0, 1.0, 0.0),
-                    fov, );
+                    fov, 
+                    aperture,
+                    dist_to_focus);
                 launch_render(&settings)?;
             }
         }
+        Anim::Aperture => {
+            for i in 0..nb_frames {
+                let mut settings: settings::Settings = Default::default();
 
+                let fov = 50.0;
+                let dist = 2.0;
+                let look_at = Point3::new(0.0, 0.0, -1.0);
+                let t = 2.0 * PI *(1.0 / 6.0);
+                let look_from = look_at + 
+                    Point3::new(dist * Scalar::cos(t), 
+                                0.8, 
+                                dist * Scalar::sin(t) );
+                let dist_to_focus = (look_from - look_at).length();
+
+                let t = (i as Scalar) / ((nb_frames-1) as Scalar);
+
+                let aperture = linear_step(t, 0.0, 1.0);
+                        
+                settings.camera = Camera::new(
+                    look_from,
+                    look_at,
+                    Vec3::new(0.0, 1.0, 0.0),
+                    fov, 
+                    aperture,
+                dist_to_focus);
+                    
+                launch_render(&settings)?; 
+            }
+        }
+        Anim::DistFocus => {
+            for i in 0..nb_frames {
+                let mut settings: settings::Settings = Default::default();
+
+                let fov = 50.0;
+                let dist = 2.0;
+                let look_at = Point3::new(0.0, 0.0, -1.0);
+                let t = 2.0 * PI *(1.0 / 6.0);
+                let look_from = look_at + 
+                    Point3::new(dist * Scalar::cos(t), 
+                                0.8, 
+                                dist * Scalar::sin(t) );
+                                
+                let aperture = 0.35;
+                let t = (i as Scalar) / ((nb_frames-1) as Scalar);
+                let dist_center = (look_from - look_at).length();
+                let dist_to_focus = linear_step(t, 0.8 * dist_center, 1.2*dist_center);
+
+                        
+                settings.camera = Camera::new(
+                    look_from,
+                    look_at,
+                    Vec3::new(0.0, 1.0, 0.0),
+                    fov, 
+                    aperture,
+                dist_to_focus);
+                    
+                launch_render(&settings)?; 
+            }
+        }
     }
-
-
     
     Ok(())
 }

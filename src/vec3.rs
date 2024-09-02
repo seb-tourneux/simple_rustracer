@@ -3,11 +3,11 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 
 pub type Scalar = f64;
 
-use crate::common;
+use crate::{common, random_double_range};
 
 #[derive(Copy, Clone, Default)]
 pub struct Vec3 {
-    e: [Scalar; 3],
+    pub e: [Scalar; 3],
 }
 
 impl Vec3 {
@@ -166,6 +166,20 @@ pub fn random_in_unit_sphere() -> Vec3 {
         if p.length_squared() < 1.0 {
             return p;
         }
+    }
+}
+
+pub fn random_in_unit_disk() -> Vec3 {
+    loop {
+        let p = Vec3::new(
+            random_double_range(-1.0, 1.0),
+            random_double_range(-1.0, 1.0),
+            0.0,
+        );
+        if p.length_squared() >= 1.0 {
+            continue;
+        }
+        return p;
     }
 }
 

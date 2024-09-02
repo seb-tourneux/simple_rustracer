@@ -1,3 +1,5 @@
+use chrono::offset;
+
 use crate::common;
 use crate::ray::Ray;
 use crate::vec3;
@@ -16,6 +18,10 @@ pub struct Camera
     pub horizontal: Vec3,
     pub vertical: Vec3,
     pub lower_left_corner: Point3,
+
+    u: Vec3,
+    v: Vec3,
+    lens_radius: Scalar,
 }
 
 impl Camera {
@@ -24,6 +30,8 @@ impl Camera {
         look_at: Vec3,
         vup: Vec3,
         vfov: Scalar, // vertical fov in degrees
+        aperture: Scalar,
+        focus_dist: Scalar,
     ) -> Camera {
         let theta = common::degrees_to_radians(vfov);
         let h = Scalar::tan(theta / 2.0);
@@ -36,12 +44,12 @@ impl Camera {
         let v = vec3::unit_vector(vec3::cross(w, u));
 
         let origin = look_from;
-        let horizontal = viewport_width * u;
-        let vertical = viewport_height * v;
+        let horizontal = focus_dist * viewport_width * u;
+        let vertical = focus_dist * viewport_height * v;
         let lower_left_corner =
-            origin - horizontal / 2.0 - vertical / 2.0 - w;
+            origin - horizontal / 2.0 - vertical / 2.0 - focus_dist * w;
 
-
+        let lens_radius = aperture / 2.0;
 
         Camera {
             vfov,
@@ -50,11 +58,17 @@ impl Camera {
             horizontal,
             vertical,
             lower_left_corner,
+            u,
+            v,
+            lens_radius,
         }
     }
 
     pub fn get_ray(&self, u: Scalar, v: Scalar) -> Ray {
-        let dir = self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin;
-        Ray::new(self.origin, dir)
+        let rd = self.lens_radius * vec3::random_in_unit_disk();
+        let offset = self.u * rd.x() + self.v * rd.y();
+
+        let dir = self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin - offset;
+        Ray::new(self.origin + offset, dir)
     }
 }
