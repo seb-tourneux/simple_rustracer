@@ -5,7 +5,7 @@ use crate::camera::Camera;
 use crate::settings::*;
 use crate::hittable::*;
 use crate::hittable_list::*;
-use crate::common::{self, random_double, SP};
+use crate::common::{self, random_double, SP, sigmoid};
 
 use crate::color::{Color, WriteColor};
 use crate::vec3::{Point3, Vec3};
@@ -19,16 +19,19 @@ use std::fmt::Write;
 
 
 
-fn sky_color(ray: &Ray) -> Color {
+fn sky_color(ray: &Ray, settings: &Settings) -> Color {
     let unit_direction = vec3::unit_vector(ray.direction());
-    let t = 0.5 * (unit_direction.y() + 1.0);
+    let mut t = 0.5 * (unit_direction.y() + 1.0);
     const COLOR1: Color = color::white();
     const COLOR2: Color = Color::new(0.5, 0.7, 1.0);
-
+    //t = t * t * t;
+    t = Scalar::powf(t, 0.5);
+    //t = sigmoid(t+0.5, 2.0);
+    
     (1.0 - t) * COLOR1 + t * COLOR2
 }
 
-fn ray_color(ray: &Ray, world: &dyn Hittable, depth: u32) -> Color {
+fn ray_color(ray: &Ray, world: &dyn Hittable, settings: &Settings, depth: u32) -> Color {
 
     if depth <= 0 {
         return color::black();
@@ -44,18 +47,73 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, depth: u32) -> Color {
         if rec.mat.as_ref().unwrap().
             scatter(ray, &rec, &mut attenuation, &mut scattered)
         {
-            return attenuation * ray_color(&scattered, world, depth - 1);
+            return attenuation * ray_color(&scattered, world, settings, depth - 1);
         }   
         return color::black();   
         //return vec3::fit01(rec.normal); // todo : pattern matching to switch pass ?
     }
-    sky_color(ray)
+    sky_color(ray, settings)
 }
 
 fn compute_color(settings: &Settings, u: Scalar, v: Scalar, world: &dyn Hittable) -> Color {
     let r = settings.camera.get_ray(u, v);
-    ray_color(&r, world, settings.max_depth)
+    ray_color(&r, world, settings, settings.max_depth)
 
+}
+
+fn generate_world_generic() -> HittableList
+{
+    let mut world = HittableList::new();
+
+    let lambert_blue = SP::new(Lambertian::new(Color::new(0.1, 0.2, 0.8), None));
+    let lambert_red = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2), Some(0.005)));
+    let lambert_dark = SP::new(Lambertian::new(Color::new(0.06, 0.05, 0.05), Some(0.1)));
+    let metal_red = SP::new(Metal::new(Color::new(0.8, 0.5, 0.3), 0.9));
+    let metal_green = SP::new(Metal::new(Color::new(0.6, 0.8, 0.65), 0.5));
+    let metal_white_fuzz = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.));
+    let metal_white_reflect = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.001));
+    let glass = SP::new(Dielectric::new(1.5));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, lambert_blue.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-1.0, 1.5, -3.0), 0.6, lambert_blue)));
+    world.add(Box::new(Sphere::new(Point3::new(4.5, 1.7, -4.0), 1.0, metal_red.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-1.2, 0.05, -1.0), 0.5, glass.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.35, -0.4, -0.7), 0.1, metal_white_reflect.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.55, -0.4, -0.8), 0.1, metal_green.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.55, -0.4, -0.75), 0.1, metal_green.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.40, -0.47, -0.7), 0.03, metal_white_reflect.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.38, -0.47, -0.75), 0.03, metal_white_reflect.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-0.33, -0.47, -0.72), 0.03, metal_white_reflect.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.5, 0.8, -1.3), 0.35, metal_green)));
+    world.add(Box::new(Sphere::new(Point3::new(-0.85, 0.5, -1.2), -0.25, glass)));
+    world.add(Box::new(Sphere::new(Point3::new(1.55, 1.2, -1.9), 0.4, metal_white_reflect)));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, lambert_red.clone())));
+    //world.add(Box::new(Sphere::new(Point3::new(-15.0, 27.0, -5.0), 25.0, lambert_dark)));
+
+
+    return world;
+}
+
+fn generate_world_debug() -> HittableList
+{
+    let mut world = HittableList::new();
+
+    let r = Scalar::cos(common::PI / 4.0);
+
+    let material_left = SP::new(Lambertian::new(Color::new(0.0, 0.0, 1.0), None));
+    let material_right = SP::new(Lambertian::new(Color::new(1.0, 0.0, 0.0), None));
+
+    world.add(Box::new(Sphere::new(
+        Point3::new(-r, 0.0, -1.0),
+        r,
+        material_left,
+    )));
+    world.add(Box::new(Sphere::new(
+        Point3::new(r, 0.0, -1.0),
+        r,
+        material_right,
+    )));
+
+    return world;
 }
 
 fn render_sequential(   settings: &Settings, 
@@ -114,22 +172,9 @@ pub fn render(settings: &Settings, img: &mut RgbImage)
         .unwrap()
         .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()));
 
-    let lambert_blue = SP::new(Lambertian::new(Color::new(0.1, 0.2, 0.8)));
-    let lambert_red = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2)));
-    let metal_red = SP::new(Metal::new(Color::new(0.8, 0.5, 0.3), 0.9));
-    let metal_green = SP::new(Metal::new(Color::new(0.6, 0.8, 0.4), 0.5));
-    let metal_white_fuzz = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.));
-    let metal_white_reflect = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.01));
-    let glass = SP::new(Dielectric::new(1.5));
-    let mut world = HittableList::new();
-    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, lambert_blue.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(-1.0, 1.5, -3.0), 0.6, lambert_blue)));
-    world.add(Box::new(Sphere::new(Point3::new(4.5, 1.7, -4.0), 1.0, metal_red.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(-1.2, 0.05, -1.0), 0.5, glass.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(0.35, -0.4, -0.7), 0.1, metal_white_reflect)));
-    world.add(Box::new(Sphere::new(Point3::new(0.5, 0.8, -1.3), 0.35, metal_green)));
-    world.add(Box::new(Sphere::new(Point3::new(-0.85, 0.5, -1.2), -0.25, glass)));
-    world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, lambert_red)));
+
+    //let world = generate_world_generic();
+    let world = generate_world_generic();
 
     if !settings.parallel {
         render_sequential(settings, &world, &progress_bar, img);
@@ -137,24 +182,6 @@ pub fn render(settings: &Settings, img: &mut RgbImage)
     else {
         render_parallel(settings, &world, &progress_bar, img);
     }
-
-    //     for j in (0..settings.image_height).rev() {
-    //         let pixel_colors: Vec<_> = (0..settings.image_width)
-    //             .into_par_iter()
-    //             .map(|i| {
-    //                 let u = (i as f64) / ((settings.image_width-1) as f64);
-    //                 let v = (j as f64) / ((settings.image_height-1) as f64);
-
-    //                 compute_color(&settings.camera, u, v, &world)
-    //             })
-    //         .collect();
-
-    //         for (i, &pixel_color) in pixel_colors.iter().enumerate() {
-    //             img.put_pixel(i as u32, j as u32, color::to_rgb(pixel_color))
-    //         }
-    //         progress_bar.inc(settings.image_width as u64);
-    //     }
-    // }
 
     progress_bar.finish();
 

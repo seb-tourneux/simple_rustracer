@@ -12,7 +12,7 @@ mkdir "$TMP_DIR"
 
 python ./tools/rename.py ./output "$TMP_DIR"
 
-FFMPEG_COMMAND="ffmpeg -y -framerate 4  -i \"$TMP_DIR/image_%04d.png\" -vf \"scale=400:-1,pad=400:400:-1:-1, tpad=stop_mode=clone:stop_duration=2\" -sws_flags neighbor"
+FFMPEG_COMMAND="ffmpeg -y -framerate 8  -i \"$TMP_DIR/image_%04d.png\" -vf \"scale=800:-1,pad=800:800:-1:-1, tpad=stop_mode=clone:stop_duration=2\" -sws_flags neighbor"
 
 echo "FFMPEG_COMMAND $FFMPEG_COMMAND"
 

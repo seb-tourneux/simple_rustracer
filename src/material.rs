@@ -1,7 +1,7 @@
 use std::iter::Scan;
 
 use crate::color::{self, Color};
-use crate::common;
+use crate::{checkerboard, common, to_spherical};
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
 use crate::vec3::{self, Scalar};
@@ -19,12 +19,14 @@ pub trait Material: Send + Sync {
 
 pub struct Lambertian {
     albedo: Color,
+    checker: Option<Scalar>,
 }
 
 impl Lambertian {
-    pub fn new(albedo: Color) -> Lambertian {
+    pub fn new(albedo: Color, checker: Option<Scalar>) -> Lambertian {
         Lambertian{
-            albedo
+            albedo,
+            checker,
         }
     }
 }
@@ -37,7 +39,16 @@ impl Material for Lambertian {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool {
+
         *attenuation = self.albedo;
+        if self.checker.is_some() {
+            let spherical = to_spherical(rec.normal);
+            if checkerboard(spherical.y(), self.checker.unwrap()) 
+                ^ checkerboard(spherical.z(), self.checker.unwrap()) 
+            {
+                *attenuation = 0.5 * self.albedo;
+            }
+        }
 
         let mut scatter_direction = rec.normal + vec3::random_unit_vector();
         if scatter_direction.near_zero() {

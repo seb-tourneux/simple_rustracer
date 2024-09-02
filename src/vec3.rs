@@ -183,3 +183,20 @@ pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: Scalar) -> Vec3 {
     let r_out_parallel = -Scalar::sqrt( Scalar::abs(1.0 - r_out_perp.length_squared()))*n;
     r_out_parallel + r_out_perp
 }
+
+pub fn sign(s: Scalar) -> Scalar {
+    if s < 0.0 {
+        -1.0
+    }
+    else {
+        1.0
+    }
+}
+
+pub fn to_spherical(v: Vec3) -> Vec3 {
+    let r = v.length();
+    let theta = Scalar::acos(v.z() / r);
+    let phi = sign(v.y()) * Scalar::acos(v.x() / (Vec3::new(v.x(), v.y(), 0.0).length()));
+
+    Vec3::new(r, theta, phi)
+}
