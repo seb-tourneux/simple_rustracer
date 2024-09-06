@@ -55,6 +55,7 @@ fn launch_render(settings: &Settings) -> std::io::Result<()> {
 enum Anim {
     NoAnim,
     Tournette,
+    Tournette2,
     Fov,
     Aperture,
     DistFocus,
@@ -62,7 +63,7 @@ enum Anim {
 
 fn main() -> std::io::Result<()> {
 
-    let anim = Anim::DistFocus;
+    let anim = Anim::Tournette2;
     let nb_frames = 16;
 
     match anim {
@@ -78,7 +79,7 @@ fn main() -> std::io::Result<()> {
                             0.8, 
                             dist * Scalar::sin(t) );
             let dist_to_focus = (look_from - look_at).length();
-            let aperture = 0.4;
+            let aperture = 0.3;
                     
             settings.camera = Camera::new(
                 look_from,
@@ -114,6 +115,34 @@ fn main() -> std::io::Result<()> {
                     dist_to_focus);
                 launch_render(&settings)?;
             }
+        }
+        Anim::Tournette2 => {
+            for i in 0..nb_frames {
+                let mut settings: settings::Settings = Default::default();
+
+                let fov = 50.0;
+                let dist = 2.0;
+                let look_at = Point3::new(0.0, 0.0, -1.0);
+                let mut t = (i as Scalar) / (nb_frames as Scalar);
+                t = linear_step(t, -2.0 * PI *(1.0 / 6.0), 2.0 * PI *(1.0 / 6.0));
+
+                let look_from = look_at + 
+                    Point3::new(dist * Scalar::cos(t), 
+                                0.8, 
+                                dist * Scalar::sin(t) );
+
+                let dist_to_focus = (look_from - look_at).length();
+                let aperture = 0.3;
+
+                settings.camera = Camera::new(
+                    look_from,
+                    look_at,
+                    Vec3::new(0.0, 1.0, 0.0),
+                    fov, 
+                    aperture,
+                    dist_to_focus);
+                launch_render(&settings)?;
+            }  
         }
         Anim::Fov => {
             for i in 0..nb_frames {
