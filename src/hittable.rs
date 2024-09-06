@@ -10,6 +10,7 @@ pub struct HitRecord {
     pub mat: Option<SP<dyn Material>>,
     pub t: Scalar,
     pub front_face: bool,
+    pub uv: Vec3,
 }
 
 impl HitRecord {

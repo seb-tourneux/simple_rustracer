@@ -1,3 +1,4 @@
+use crate::quad::Quad;
 use crate::{material::*, to_spherical};
 use crate::{color, ray::*, vec3};
 use crate::camera::Camera;
@@ -62,19 +63,21 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, settings: &Settings, depth: u32) -
     }
 
     let mut rec = HitRecord::new();
-    let epsilon = 0.0001;
+    const EPSILON: Scalar = 0.0001;
 
-    if world.hit(ray, epsilon, common::INFINITY, &mut rec) {
+    if world.hit(ray, EPSILON, common::INFINITY, &mut rec) {
         let mut attenuation = Color::default();
         let mut scattered = Ray::default();
 
+        //return rec.uv; // todo : pattern matching to switch pass ?
+        //return vec3::fit01(vec3::unit_vector(rec.p)); // todo : pattern matching to switch pass ?
+        //return vec3::fit01(vec3::unit_vector(rec.normal)); // todo : pattern matching to switch pass ?
         if rec.mat.as_ref().unwrap().
             scatter(ray, &rec, &mut attenuation, &mut scattered)
         {
             return attenuation * ray_color(&scattered, world, settings, depth - 1);
         }   
         return color::black();   
-        //return vec3::fit01(rec.normal); // todo : pattern matching to switch pass ?
     }
     sky_color(ray, settings)
 }
@@ -117,6 +120,38 @@ fn generate_world_generic() -> HittableList
     world.add(Box::new(Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0, lambert_red_checker.clone())));
     //world.add(Box::new(Sphere::new(Point3::new(-15.0, 27.0, -5.0), 25.0, lambert_dark)));
 
+
+    return world;
+}
+
+fn generate_world_planes() -> HittableList
+{
+    
+    let mut world = HittableList::new();
+
+    let lambert_blue = SP::new(Lambertian::new(Color::new(0.1, 0.2, 0.8), None));
+    let lambert_red_plane = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2), Some(0.2)));
+    let lambert_red_checker = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2), Some(0.5)));
+    let lambert_dark = SP::new(Lambertian::new(Color::new(0.06, 0.05, 0.05), Some(0.1)));
+    let metal_red = SP::new(Metal::new(Color::new(0.8, 0.5, 0.3), 0.9));
+    let metal_green = SP::new(Metal::new(Color::new(0.6, 0.8, 0.65), 0.5));
+    let metal_white_fuzz = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.));
+    let metal_white_reflect = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.001));
+    let glass = SP::new(Dielectric::new(1.5));
+    let bubble = SP::new(Dielectric::new(-1.5));
+
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, lambert_blue.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-1.2, 0.05, -1.0), 0.5, metal_white_reflect.clone())));
+    let plane_scale = 3.5;
+    world.add(Box::new(Quad::new(Point3::new(-0.5*plane_scale,-0.5, -0.5*plane_scale -1.0),
+    Vec3::new(0.0, 0.0, plane_scale),
+                                                Vec3::new(plane_scale, 0.0, 0.0),
+                                                lambert_red_plane.clone())));
+    
+    world.add(Box::new(Quad::new(Point3::new(2.0, -1.0, -1.5),
+                                                Vec3::new(0.0,  3.0, 0.0),
+                                                Vec3::new(-2.0, 0.0, -2.0),
+                                                                                            metal_green.clone())));
 
     return world;
 }
@@ -202,7 +237,8 @@ pub fn render(settings: &Settings, img: &mut RgbImage)
 
 
     //let world = generate_world_generic();
-    let world = generate_world_generic();
+    //let world = generate_world_generic();
+    let world = generate_world_planes();
 
     if !settings.parallel {
         render_sequential(settings, &world, &progress_bar, img);

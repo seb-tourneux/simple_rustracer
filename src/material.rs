@@ -42,9 +42,8 @@ impl Material for Lambertian {
 
         *attenuation = self.albedo;
         if self.checker.is_some() {
-            let spherical = to_spherical(rec.normal);
-            if checkerboard(spherical.y(), self.checker.unwrap()) 
-                ^ checkerboard(spherical.z(), self.checker.unwrap()) 
+            if checkerboard(rec.uv.x(), self.checker.unwrap()) 
+                ^ checkerboard(rec.uv.y(), self.checker.unwrap()) 
             {
                 *attenuation = 0.5 * self.albedo;
             }

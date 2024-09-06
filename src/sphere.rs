@@ -2,7 +2,7 @@ use crate::hittable::{HitRecord, Hittable};
 use crate::material::Material;
 use crate::common::SP;
 use crate::ray::Ray;
-use crate::vec3::{self, Point3, Scalar};
+use crate::vec3::{self, Point3, Vec3, Scalar};
 
 pub struct Sphere {
     center: Point3,
@@ -47,6 +47,8 @@ impl Hittable for Sphere {
         let outward_normal = (rec.p - self.center) / self.radius;
         rec.set_face_normal(ray, outward_normal);
         rec.mat = Some(self.mat.clone());
+        let spherical = vec3::to_spherical(rec.normal);
+        rec.uv = Vec3::new(spherical.y(), spherical.z(), 0.0);
 
         true
     }

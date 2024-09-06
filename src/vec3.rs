@@ -209,8 +209,8 @@ pub fn sign(s: Scalar) -> Scalar {
 
 pub fn to_spherical(v: Vec3) -> Vec3 {
     let r = v.length();
-    let theta = Scalar::acos(v.z() / r);
-    let phi = sign(v.y()) * Scalar::acos(v.x() / (Vec3::new(v.x(), v.y(), 0.0).length()));
+    let theta = Scalar::acos(v.y() / r);
+    let phi = sign(v.z()) * Scalar::acos(v.x() / (Vec3::new(v.x(), v.z(), 0.0).length()));
 
     Vec3::new(r, theta, phi)
 }

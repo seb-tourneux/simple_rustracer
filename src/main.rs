@@ -9,7 +9,8 @@ mod common;
 mod material;
 
 mod render;
-pub mod sphere;
+mod sphere;
+mod quad;
 use crate::render::render;
 
 use std::path::Path;
@@ -53,7 +54,8 @@ fn launch_render(settings: &Settings) -> std::io::Result<()> {
 }
 
 enum Anim {
-    NoAnim,
+    Still,
+    StillCamBase,
     Tournette,
     Tournette2,
     Fov,
@@ -63,11 +65,11 @@ enum Anim {
 
 fn main() -> std::io::Result<()> {
 
-    let anim = Anim::Tournette2;
+    let anim = Anim::StillCamBase;
     let nb_frames = 16;
 
     match anim {
-        Anim::NoAnim => {
+        Anim::Still => {
             let mut settings: settings::Settings = Default::default();
 
             let fov = 50.0;
@@ -79,7 +81,33 @@ fn main() -> std::io::Result<()> {
                             0.8, 
                             dist * Scalar::sin(t) );
             let dist_to_focus = (look_from - look_at).length();
-            let aperture = 0.3;
+            //let aperture = 0.3;
+            let aperture = 0.0;
+                    
+            settings.camera = Camera::new(
+                look_from,
+                look_at,
+                Vec3::new(0.0, 1.0, 0.0),
+                fov, 
+                aperture,
+            dist_to_focus);
+                
+            launch_render(&settings)?;   
+        }
+        Anim::StillCamBase => {
+            let mut settings: settings::Settings = Default::default();
+
+            let fov = 50.0;
+            let dist = 2.0;
+            let look_at = Point3::new(0.0, 0.0, -1.0);
+            let t = 2.0 * PI *(1.0 / 4.0);
+            let look_from = look_at + 
+                Point3::new(dist * Scalar::cos(t), 
+                            0.8, 
+                            dist * Scalar::sin(t) );
+            let dist_to_focus = (look_from - look_at).length();
+            //let aperture = 0.3;
+            let aperture = 0.0;
                     
             settings.camera = Camera::new(
                 look_from,
