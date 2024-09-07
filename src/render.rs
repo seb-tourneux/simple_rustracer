@@ -11,6 +11,7 @@ use crate::common::{self, random_double, SP, sigmoid};
 use crate::color::{Color, WriteColor};
 use crate::vec3::{Point3, Vec3};
 use crate::vec3::Scalar;
+use crate::vec3::*;
 use crate::sphere::Sphere;
 
 use rayon::prelude::*;
@@ -50,7 +51,7 @@ fn sky_color(ray: &Ray, settings: &Settings) -> Color {
     const COLOR2: Color = Color::new(0.5, 0.7, 1.0);
     //t = t * t * t;
     //t = Scalar::powf(t, 0.5);
-    t*=1.3;
+    t*=1.5;
     //t = sigmoid(t+0.5, 2.0);
     
     (1.0 - t) * COLOR1 + t * COLOR2
@@ -130,18 +131,21 @@ fn generate_world_planes() -> HittableList
     let mut world = HittableList::new();
 
     let lambert_blue = SP::new(Lambertian::new(Color::new(0.1, 0.2, 0.8), None));
+    let lambert_green = SP::new(Lambertian::new(Color::new(0.5, 0.8, 0.6), None));
     let lambert_red_plane = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2), Some(0.2)));
     let lambert_red_checker = SP::new(Lambertian::new(Color::new(0.8, 0.3, 0.2), Some(0.5)));
     let lambert_dark = SP::new(Lambertian::new(Color::new(0.06, 0.05, 0.05), Some(0.1)));
+    let lambert_light = SP::new(Lambertian::new(Color::new(0.95, 0.95, 0.95), Some(0.1)));
     let metal_red = SP::new(Metal::new(Color::new(0.8, 0.5, 0.3), 0.9));
     let metal_green = SP::new(Metal::new(Color::new(0.6, 0.8, 0.65), 0.5));
-    let metal_white_fuzz = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.));
+    let metal_white_little_fuzz = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.05));
     let metal_white_reflect = SP::new(Metal::new(Color::new(0.8, 0.8, 0.8), 0.001));
     let glass = SP::new(Dielectric::new(1.5));
     let bubble = SP::new(Dielectric::new(-1.5));
 
-    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, lambert_blue.clone())));
-    world.add(Box::new(Sphere::new(Point3::new(-1.2, 0.05, -1.0), 0.5, metal_white_reflect.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5, metal_white_reflect.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(-1.2, 0.05, -1.0), 0.5, lambert_blue.clone())));
+    world.add(Box::new(Sphere::new(Point3::new(1.0, -0.4, -1.0), 0.1, lambert_green.clone())));
     let plane_scale = 3.5;
     world.add(Box::new(Quad::new(Point3::new(-0.5*plane_scale,-0.5, -0.5*plane_scale -1.0),
     Vec3::new(0.0, 0.0, plane_scale),
@@ -151,8 +155,20 @@ fn generate_world_planes() -> HittableList
     world.add(Box::new(Quad::new(Point3::new(2.0, -1.0, -1.5),
                                                 Vec3::new(0.0,  3.0, 0.0),
                                                 Vec3::new(-2.0, 0.0, -2.0),
-                                                                                            metal_green.clone())));
+                                                lambert_light.clone())));
 
+    let angle = common::degrees_to_radians(45.0);
+    world.add(Box::new(Quad::new(Point3::new(0.6, 0.0, -1.0),
+                                    0.5*Vec3::new(1.0,  0.0, 0.0),
+                                    0.5*Vec3::new(0.0, Scalar::cos(angle), Scalar::sin(angle)),
+                                    metal_white_reflect.clone())));
+
+                                    let angle3 = common::degrees_to_radians(-45.0);
+    world.add(Box::new(Quad::new(Point3::new(0.5, 0.75, -0.5),
+                                    0.5*Vec3::new(0.0,  0.0, 1.0),
+                                    0.5*Vec3::new(Scalar::cos(angle3), Scalar::sin(angle3), 0.0),
+                                    metal_white_reflect.clone())));
+                                          
     return world;
 }
 

@@ -1,10 +1,12 @@
 use std::iter::Scan;
 
 use crate::color::{self, Color};
+use crate::noise::Perlin;
 use crate::{checkerboard, common, to_spherical};
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
 use crate::vec3::{self, Scalar};
+
 
 pub trait Material: Send + Sync {
     fn scatter(
@@ -14,12 +16,14 @@ pub trait Material: Send + Sync {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool;
-
 }
+
 
 pub struct Lambertian {
     albedo: Color,
     checker: Option<Scalar>,
+
+    perlin: Perlin,
 }
 
 impl Lambertian {
@@ -27,6 +31,7 @@ impl Lambertian {
         Lambertian{
             albedo,
             checker,
+            perlin: Perlin::new(),
         }
     }
 }
@@ -42,11 +47,12 @@ impl Material for Lambertian {
 
         *attenuation = self.albedo;
         if self.checker.is_some() {
-            if checkerboard(rec.uv.x(), self.checker.unwrap()) 
-                ^ checkerboard(rec.uv.y(), self.checker.unwrap()) 
-            {
-                *attenuation = 0.5 * self.albedo;
-            }
+            // if checkerboard(rec.uv.x(), self.checker.unwrap()) 
+            //     ^ checkerboard(rec.uv.y(), self.checker.unwrap()) 
+            // {
+            //     *attenuation = 0.5 * self.albedo;
+            // }
+            *attenuation = self.perlin.cell_noise(rec.p) * self.albedo;
         }
 
         let mut scatter_direction = rec.normal + vec3::random_unit_vector();

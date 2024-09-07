@@ -75,7 +75,7 @@ impl Default for Settings {
             image_height: image_height,
             parallel: true,
             camera: camera,
-            sample_per_pixel: 4,
+            sample_per_pixel: 16,
             max_depth: 10,
             //env_map: common::SP::new(load_exr(&env_map_filename)),
             env_map: None,

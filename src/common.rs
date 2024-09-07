@@ -4,6 +4,7 @@ use crate::vec3::Scalar;
 pub use std::f64::consts::PI;
 pub use std::f64::INFINITY;
 
+use std::ops::Range;
 //use std::rc::Rc;
 use std::sync::Arc;
 
@@ -20,6 +21,10 @@ pub fn degrees_to_radians(degrees: Scalar) -> Scalar {
 
 pub fn random_double() -> Scalar {
     rand::thread_rng().gen()
+}
+
+pub fn random_int(range: Range<u32>) -> u32 {
+    rand::thread_rng().gen_range(range)
 }
 
 pub fn linear_step(t:Scalar, min: Scalar, max: Scalar) -> Scalar {

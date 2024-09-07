@@ -7,6 +7,7 @@ mod hittable;
 mod hittable_list;
 mod common;
 mod material;
+mod noise;
 
 mod render;
 mod sphere;
@@ -105,7 +106,7 @@ fn main() -> std::io::Result<()> {
                 Point3::new(dist * Scalar::cos(t), 
                             0.8, 
                             dist * Scalar::sin(t) );
-            let dist_to_focus = (look_from - look_at).length();
+            let dist_to_focus = (look_from - look_at).length() - 0.4;
             //let aperture = 0.3;
             let aperture = 0.0;
                     
